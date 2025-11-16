@@ -269,6 +269,7 @@ local AutoFarmToggle = MainTab:CreateToggle({
    Flag = "AutoFarm",
    Callback = function(Value)
       print("自動ファーム:", Value)
+      -- ここに自動ファーム機能を追加
    end,
 })
 
@@ -279,6 +280,7 @@ local FlyToggle = MainTab:CreateToggle({
    Flag = "FlyMode",
    Callback = function(Value)
       print("飛行モード:", Value)
+      -- 飛行機能をここに追加
    end,
 })
 
@@ -289,8 +291,140 @@ local NoclipToggle = MainTab:CreateToggle({
    Flag = "Noclip",
    Callback = function(Value)
       print("Noclip:", Value)
+      -- Noclip機能をここに追加
    end,
 })
+
+-- プレイヤータブのセクション
+local PlayerSection = PlayerTab:CreateSection(Lang.sectionPlayer)
+
+-- 移動速度スライダー
+local WalkSpeedSlider = PlayerTab:CreateSlider({
+   Name = Lang.sliderWalkSpeed,
+   Range = {16, 200},
+   Increment = 1,
+   Suffix = Lang.suffixSpeed,
+   CurrentValue = 16,
+   Flag = "WalkSpeed",
+   Callback = function(Value)
+      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+   end,
+})
+
+-- ジャンプパワースライダー
+local JumpPowerSlider = PlayerTab:CreateSlider({
+   Name = Lang.sliderJumpPower,
+   Range = {50, 300},
+   Increment = 5,
+   Suffix = Lang.suffixPower,
+   CurrentValue = 50,
+   Flag = "JumpPower",
+   Callback = function(Value)
+      game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+   end,
+})
+
+-- 武器選択ドロップダウン
+local Dropdown = MainTab:CreateDropdown({
+   Name = Lang.dropdownWeapon,
+   Options = {Lang.weaponSword, Lang.weaponGun, Lang.weaponStaff, Lang.weaponBow},
+   CurrentOption = {Lang.weaponSword},
+   MultipleOptions = false,
+   Flag = "WeaponDropdown",
+   Callback = function(Option)
+      print("選択された武器:", Option)
+   end,
+})
+
+-- 設定タブ - 言語セクション
+local LanguageSection = SettingsTab:CreateSection(Lang.sectionLanguage)
+
+SettingsTab:CreateLabel(Lang.labelLanguage)
+
+-- 言語選択ドロップダウン
+local LanguageDropdown = SettingsTab:CreateDropdown({
+   Name = Lang.dropdownLanguage,
+   Options = {"日本語 (Japanese)", "English", "中文 (Chinese)", "한국어 (Korean)"},
+   CurrentOption = {"日本語 (Japanese)"},
+   MultipleOptions = false,
+   Flag = "LanguageDropdown",
+   Callback = function(Option)
+      local langMap = {
+         ["日本語 (Japanese)"] = "ja",
+         ["English"] = "en",
+         ["中文 (Chinese)"] = "zh",
+         ["한국어 (Korean)"] = "ko"
+      }
+      
+      currentLang = langMap[Option]
+      Lang = Languages[currentLang]
+      
+      Rayfield:Notify({
+         Title = "Language Changed",
+         Content = "Please restart the script to apply language changes.",
+         Duration = 5,
+         Image = 4483362458,
+      })
+      
+      print("言語が変更されました:", currentLang)
+   end,
+})
+
+-- プレイヤー名入力
+local Input = SettingsTab:CreateInput({
+   Name = Lang.inputPlayerName,
+   PlaceholderText = Lang.inputPlaceholder,
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      print("入力されたテキスト:", Text)
+   end,
+})
+
+-- UIカラーピッカー
+local ColorPicker = SettingsTab:CreateColorPicker({
+   Name = Lang.colorUI,
+   Color = Color3.fromRGB(255, 255, 255),
+   Flag = "ColorPicker",
+   Callback = function(Value)
+      print("選択された色:", Value)
+   end
+})
+
+-- キーバインド
+local Keybind = SettingsTab:CreateKeybind({
+   Name = Lang.keybindToggle,
+   CurrentKeybind = "Q",
+   HoldToInteract = false,
+   Flag = "UIKeybind",
+   Callback = function(Keybind)
+      print("キーバインドが変更されました:", Keybind)
+   end,
+})
+
+-- バージョン表示
+SettingsTab:CreateLabel(Lang.labelVersion)
+
+-- 使い方パラグラフ
+SettingsTab:CreateParagraph({
+   Title = Lang.paraTitle,
+   Content = Lang.paraContent
+})
+
+-- Discord招待リンク表示
+SettingsTab:CreateParagraph({
+   Title = "Discord",
+   Content = "Join our Discord: discord.gg/KUnQaDRN"
+})
+
+-- 起動時の通知
+Rayfield:Notify({
+   Title = "柊羽 UI",
+   Content = "スクリプトが正常に読み込まれました！ PC・スマホ両対応です。",
+   Duration = 5,
+   Image = 4483362458,
+})
+
+print("柊羽 UI が正常に読み込まれました!")
 -- Rayfield UIライブラリの読み込み
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -562,6 +696,7 @@ local AutoFarmToggle = MainTab:CreateToggle({
    Flag = "AutoFarm",
    Callback = function(Value)
       print("自動ファーム:", Value)
+      -- ここに自動ファーム機能を追加
    end,
 })
 
@@ -572,6 +707,7 @@ local FlyToggle = MainTab:CreateToggle({
    Flag = "FlyMode",
    Callback = function(Value)
       print("飛行モード:", Value)
+      -- 飛行機能をここに追加
    end,
 })
 
@@ -582,6 +718,7 @@ local NoclipToggle = MainTab:CreateToggle({
    Flag = "Noclip",
    Callback = function(Value)
       print("Noclip:", Value)
+      -- Noclip機能をここに追加
    end,
 })
 
@@ -626,45 +763,39 @@ local Dropdown = MainTab:CreateDropdown({
    end,
 })
 
--- ===== Builderタブ - 正しいおもちゃ名を使用 =====
+-- ===== Builder タブ - おもちゃ建築機能 =====
 local BuilderSection = BuilderTab:CreateSection("🎨 創造的建築")
 
--- おもちゃスポーン関数（遅延付き）
-local function spawnToy(toyName, position)
-   pcall(function()
-      local args = {[1] = toyName, [2] = position}
-      game:GetService("ReplicatedStorage"):WaitForChild("SpawnToy"):FireServer(unpack(args))
-   end)
-   task.wait(0.1)
-end
-
--- ロケット作成（正しいおもちゃ名）
+-- ロケット作成機能
 BuilderTab:CreateButton({
    Name = "🚀 ロケット作成",
    Callback = function()
-      local plr = game.Players.LocalPlayer
-      if not plr.Character then return end
-      local pos = plr.Character.HumanoidRootPart.Position
+      local function spawnToy(name, pos)
+         local args = {[1] = name, [2] = pos}
+         game:GetService("ReplicatedStorage").SpawnToy:FireServer(unpack(args))
+         wait(0.1)
+      end
       
-      -- 本体（金属製椅子を円形に配置）
+      local plr = game.Players.LocalPlayer
+      local char = plr.Character
+      local pos = char.HumanoidRootPart.Position
+      
+      -- ロケット本体（円筒形に配置）
       for i = 1, 8 do
          local angle = (i / 8) * math.pi * 2
-         local x = pos.X + math.cos(angle) * 4
-         local z = pos.Z + math.sin(angle) * 4
-         spawnToy("Chair (Metal)", Vector3.new(x, pos.Y + 2, z))
-      end
-      
-      -- 中段（ベンチ）
-      for i = 1, 6 do
-         local angle = (i / 6) * math.pi * 2
          local x = pos.X + math.cos(angle) * 3
          local z = pos.Z + math.sin(angle) * 3
-         spawnToy("Bench", Vector3.new(x, pos.Y + 6, z))
+         spawnToy("Barrel", Vector3.new(x, pos.Y, z))
       end
       
-      -- 先端（積み重ね）
-      for i = 1, 5 do
-         spawnToy("Traffic Cone", Vector3.new(pos.X, pos.Y + 10 + i * 2, pos.Z))
+      -- ロケット先端
+      for i = 1, 4 do
+         spawnToy("Traffic Cone", Vector3.new(pos.X, pos.Y + i * 2, pos.Z))
+      end
+      
+      -- 推進器
+      for i = 1, 3 do
+         spawnToy("Fan", Vector3.new(pos.X, pos.Y - i * 2, pos.Z))
       end
       
       Rayfield:Notify({Title = "🚀 完成!", Content = "ロケットが作成されました!", Duration = 3})
@@ -673,55 +804,65 @@ BuilderTab:CreateButton({
 
 -- ジェットコースター作成
 BuilderTab:CreateButton({
-   Name = "🎢 ジェットコースター",
+   Name = "🎢 ジェットコースター作成",
    Callback = function()
-      local plr = game.Players.LocalPlayer
-      if not plr.Character then return end
-      local pos = plr.Character.HumanoidRootPart.Position
-      
-      -- レール部分（基本ベンチを使用）
-      for i = 0, 40 do
-         local x = pos.X + i * 3
-         local y = pos.Y + 15 + math.sin(i * 0.4) * 8
-         local z = pos.Z + math.cos(i * 0.3) * 5
-         spawnToy("Bench", Vector3.new(x, y, z))
+      local function spawnToy(name, pos)
+         local args = {[1] = name, [2] = pos}
+         game:GetService("ReplicatedStorage").SpawnToy:FireServer(unpack(args))
+         wait(0.05)
       end
       
-      -- 支柱（金属テーブル）
-      for i = 0, 40, 8 do
-         local x = pos.X + i * 3
-         local z = pos.Z + math.cos(i * 0.3) * 5
-         for j = 0, 4 do
-            spawnToy("Table (Metal)", Vector3.new(x, pos.Y + j * 4, z))
+      local plr = game.Players.LocalPlayer
+      local pos = plr.Character.HumanoidRootPart.Position
+      
+      -- レール（波型）
+      for i = 0, 50 do
+         local x = pos.X + i * 2
+         local y = pos.Y + math.sin(i * 0.3) * 5 + 10
+         local z = pos.Z + math.cos(i * 0.2) * 3
+         spawnToy("Plank", Vector3.new(x, y, z))
+      end
+      
+      -- サポート柱
+      for i = 0, 50, 5 do
+         local x = pos.X + i * 2
+         local z = pos.Z + math.cos(i * 0.2) * 3
+         for j = 0, 3 do
+            spawnToy("Barrel", Vector3.new(x, pos.Y + j * 3, z))
          end
       end
       
-      Rayfield:Notify({Title = "🎢 完成!", Content = "ジェットコースターが完成!", Duration = 3})
+      Rayfield:Notify({Title = "🎢 完成!", Content = "ジェットコースターが作成されました!", Duration = 3})
    end,
 })
 
--- タワー建設
+-- 巨大タワー作成
 BuilderTab:CreateButton({
    Name = "🗼 巨大タワー",
    Callback = function()
+      local function spawnToy(name, pos)
+         local args = {[1] = name, [2] = pos}
+         game:GetService("ReplicatedStorage").SpawnToy:FireServer(unpack(args))
+         wait(0.08)
+      end
+      
       local plr = game.Players.LocalPlayer
-      if not plr.Character then return end
       local pos = plr.Character.HumanoidRootPart.Position
       
       -- タワーの各層
-      for level = 0, 15 do
-         local y = pos.Y + level * 5
-         local radius = 6 - (level * 0.2)
-         for i = 1, 4 do
-            local angle = (i / 4) * math.pi * 2
+      for level = 0, 20 do
+         local y = pos.Y + level * 4
+         for i = 1, 6 do
+            local angle = (i / 6) * math.pi * 2
+            local radius = 5 - (level * 0.1)
             local x = pos.X + math.cos(angle) * radius
             local z = pos.Z + math.sin(angle) * radius
-            spawnToy("Cracked Stool", Vector3.new(x, y, z))
+            spawnToy("Crate", Vector3.new(x, y, z))
          end
       end
       
-      -- 頂上のランプ
-      spawnToy("Lamp", Vector3.new(pos.X, pos.Y + 80, pos.Z))
+      -- 頂上の旗
+      spawnToy("Flag", Vector3.new(pos.X, pos.Y + 85, pos.Z))
       
       Rayfield:Notify({Title = "🗼 完成!", Content = "巨大タワーが建設されました!", Duration = 3})
    end,
@@ -729,68 +870,88 @@ BuilderTab:CreateButton({
 
 -- 橋建設
 BuilderTab:CreateButton({
-   Name = "🌉 長い橋",
+   Name = "🌉 吊り橋建設",
    Callback = function()
-      local plr = game.Players.LocalPlayer
-      if not plr.Character then return end
-      local pos = plr.Character.HumanoidRootPart.Position
-      
-      -- 橋の床（基本ベンチ）
-      for i = 0, 25 do
-         spawnToy("Basic Bench", Vector3.new(pos.X + i * 4, pos.Y + 10, pos.Z))
-         spawnToy("Basic Bench", Vector3.new(pos.X + i * 4, pos.Y + 10, pos.Z + 3))
+      local function spawnToy(name, pos)
+         local args = {[1] = name, [2] = pos}
+         game:GetService("ReplicatedStorage").SpawnToy:FireServer(unpack(args))
+         wait(0.06)
       end
       
-      -- 手すり（両側）
-      for i = 0, 25, 3 do
-         spawnToy("Banner", Vector3.new(pos.X + i * 4, pos.Y + 13, pos.Z - 2))
-         spawnToy("Banner", Vector3.new(pos.X + i * 4, pos.Y + 13, pos.Z + 5))
-      end
-      
-      Rayfield:Notify({Title = "🌉 完成!", Content = "橋が完成しました!", Duration = 3})
-   end,
-})
-
--- 部屋作成
-BuilderTab:CreateButton({
-   Name = "🏠 小さな部屋",
-   Callback = function()
       local plr = game.Players.LocalPlayer
-      if not plr.Character then return end
       local pos = plr.Character.HumanoidRootPart.Position
       
-      -- 床
-      for x = -2, 2 do
-         for z = -2, 2 do
-            spawnToy("Basic Desk", Vector3.new(pos.X + x * 4, pos.Y, pos.Z + z * 4))
+      -- 橋の床
+      for i = 0, 30 do
+         spawnToy("Plank", Vector3.new(pos.X + i * 2, pos.Y + 10, pos.Z))
+      end
+      
+      -- 吊りケーブル（両サイド）
+      for side = -1, 1, 2 do
+         for i = 0, 30, 3 do
+            local height = 15 + math.abs(15 - i) * 0.3
+            spawnToy("Rope", Vector3.new(pos.X + i * 2, pos.Y + height, pos.Z + side * 3))
          end
       end
       
-      -- 壁
-      for i = 0, 3 do
-         spawnToy("Basic Shelf", Vector3.new(pos.X - 8, pos.Y + i * 4, pos.Z))
-         spawnToy("Basic Shelf", Vector3.new(pos.X + 8, pos.Y + i * 4, pos.Z))
-         spawnToy("Basic Shelf", Vector3.new(pos.X, pos.Y + i * 4, pos.Z - 8))
-         spawnToy("Basic Shelf", Vector3.new(pos.X, pos.Y + i * 4, pos.Z + 8))
+      -- タワー支柱
+      for side = -1, 1, 2 do
+         for h = 0, 5 do
+            spawnToy("Barrel", Vector3.new(pos.X, pos.Y + h * 4, pos.Z + side * 3))
+            spawnToy("Barrel", Vector3.new(pos.X + 60, pos.Y + h * 4, pos.Z + side * 3))
+         end
       end
       
-      -- 家具
-      spawnToy("Couch", Vector3.new(pos.X - 5, pos.Y + 2, pos.Z - 5))
-      spawnToy("Table (Metal)", Vector3.new(pos.X, pos.Y + 2, pos.Z))
-      spawnToy("Lamp", Vector3.new(pos.X, pos.Y + 15, pos.Z))
+      Rayfield:Notify({Title = "🌉 完成!", Content = "吊り橋が完成しました!", Duration = 3})
+   end,
+})
+
+-- 迷路作成
+BuilderTab:CreateButton({
+   Name = "🌀 3D迷路",
+   Callback = function()
+      local function spawnToy(name, pos)
+         local args = {[1] = name, [2] = pos}
+         game:GetService("ReplicatedStorage").SpawnToy:FireServer(unpack(args))
+         wait(0.07)
+      end
       
-      Rayfield:Notify({Title = "🏠 完成!", Content = "部屋が作成されました!", Duration = 3})
+      local plr = game.Players.LocalPlayer
+      local pos = plr.Character.HumanoidRootPart.Position
+      
+      -- 迷路の壁
+      local maze = {
+         {1,1,1,1,1,1,1,1,1,1},
+         {1,0,0,0,1,0,0,0,0,1},
+         {1,0,1,0,1,0,1,1,0,1},
+         {1,0,1,0,0,0,0,1,0,1},
+         {1,0,1,1,1,1,0,1,0,1},
+         {1,0,0,0,0,0,0,0,0,1},
+         {1,1,1,1,1,1,1,1,1,1}
+      }
+      
+      for row = 1, #maze do
+         for col = 1, #maze[row] do
+            if maze[row][col] == 1 then
+               for h = 0, 2 do
+                  spawnToy("Crate", Vector3.new(pos.X + col * 3, pos.Y + h * 3, pos.Z + row * 3))
+               end
+            end
+         end
+      end
+      
+      Rayfield:Notify({Title = "🌀 完成!", Content = "3D迷路が作成されました!", Duration = 3})
    end,
 })
 
 -- カスタムビルダー
 local BuilderSection2 = BuilderTab:CreateSection("⚙️ カスタム設定")
 
-local customToy = "Cracked Stool"
+local customToy = "Barrel"
 BuilderTab:CreateDropdown({
    Name = "おもちゃ選択",
-   Options = {"Cracked Stool", "Bench", "Chair (Metal)", "Table (Metal)", "Basic Desk", "Basic Shelf", "Couch", "Lamp", "Banner", "Tree", "Cactus"},
-   CurrentOption = {"Cracked Stool"},
+   Options = {"Barrel", "Crate", "Plank", "Traffic Cone", "Fan", "Flag", "Rope"},
+   CurrentOption = {"Barrel"},
    Flag = "CustomToy",
    Callback = function(Option)
       customToy = Option
@@ -800,7 +961,7 @@ BuilderTab:CreateDropdown({
 local spawnCount = 10
 BuilderTab:CreateSlider({
    Name = "生成数",
-   Range = {5, 50},
+   Range = {5, 100},
    Increment = 5,
    CurrentValue = 10,
    Flag = "SpawnCount",
@@ -812,8 +973,13 @@ BuilderTab:CreateSlider({
 BuilderTab:CreateButton({
    Name = "🎯 円形配置",
    Callback = function()
+      local function spawnToy(name, pos)
+         local args = {[1] = name, [2] = pos}
+         game:GetService("ReplicatedStorage").SpawnToy:FireServer(unpack(args))
+         wait(0.05)
+      end
+      
       local plr = game.Players.LocalPlayer
-      if not plr.Character then return end
       local pos = plr.Character.HumanoidRootPart.Position
       
       for i = 1, spawnCount do
@@ -823,7 +989,7 @@ BuilderTab:CreateButton({
          spawnToy(customToy, Vector3.new(x, pos.Y, z))
       end
       
-      Rayfield:Notify({Title = "✅ 完了", Content = spawnCount .. "個配置しました!", Duration = 2})
+      Rayfield:Notify({Title = "✅ 完了", Content = spawnCount .. "個のおもちゃを配置しました!", Duration = 2})
    end,
 })
 
@@ -856,6 +1022,8 @@ local LanguageDropdown = SettingsTab:CreateDropdown({
          Duration = 5,
          Image = 4483362458,
       })
+      
+      print("言語が変更されました:", currentLang)
    end,
 })
 
@@ -908,7 +1076,7 @@ SettingsTab:CreateParagraph({
 -- 起動時の通知
 Rayfield:Notify({
    Title = "柊羽 UI",
-   Content = "スクリプトが正常に読み込まれました！",
+   Content = "スクリプトが正常に読み込まれました！ PC・スマホ両対応です。",
    Duration = 5,
    Image = 4483362458,
 })
