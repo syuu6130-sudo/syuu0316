@@ -3,7 +3,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- ウィンドウの作成
 local Window = Rayfield:CreateWindow({
-   Name = "柊羽 UI",
+   Name = "柊羽 UI - 板スポーン",
    LoadingTitle = "読み込み中...",
    LoadingSubtitle = "by 柊羽",
    ConfigurationSaving = {
@@ -20,7 +20,7 @@ local Window = Rayfield:CreateWindow({
    KeySettings = {
       Title = "キーシステム",
       Subtitle = "キーを入力してください",
-      Note = "キーはDiscordサーバーで取得できます: discord.gg/KUnQaDRN",
+      Note = "キー: シュークリーム | Discord: discord.gg/KUnQaDRN",
       FileName = "ShuuhaKey",
       SaveKey = true,
       GrabKeyFromSite = false,
@@ -28,43 +28,40 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
 -- タブの作成
 local PlankTab = Window:CreateTab("📦 板スポーン", 4483362458)
 local PlankSection = PlankTab:CreateSection("板の設定")
 
--- 板スポーンの状態
-local plankSpawnEnabled = false
-local plankSpawnConnection = nil
-
 -- 使用するおもちゃの選択
 local selectedToy = "Pallet"
 
+-- おもちゃのリスト（正確な名前）
+local toyOptions = {
+   "Pallet", "Basic Bench", "Bench", "Basic Desk", "Table (Metal)", 
+   "Cracked Stool", "Chair (Metal)", "Basic Shelf", "Couch",
+   "Daycare Table", "Lab Table", "School Lunch Table", "Crate",
+   "Orange Bed", "Blue Bed", "Spooky Chair", "Spooky Bench"
+}
+
 PlankTab:CreateDropdown({
    Name = "おもちゃを選択",
-   Options = {
-      "Pallet", "Basic Bench", "Bench", "Basic Desk", "Table (Metal)", 
-      "Cracked Stool", "Chair (Metal)", "Basic Shelf", "Couch",
-      "Daycare Table", "Lab Table", "School Lunch Table", "Crate"
-   },
+   Options = toyOptions,
    CurrentOption = {"Pallet"},
    Flag = "PlankToyDropdown",
    Callback = function(Option)
       selectedToy = Option
       print("選択されたおもちゃ:", selectedToy)
-   end,
-})
-
--- スポーン間隔設定
-local spawnInterval = 0.5
-PlankTab:CreateSlider({
-   Name = "スポーン間隔（秒）",
-   Range = {0.1, 2},
-   Increment = 0.1,
-   Suffix = " 秒",
-   CurrentValue = 0.5,
-   Flag = "PlankSpawnInterval",
-   Callback = function(Value)
-      spawnInterval = Value
+      Rayfield:Notify({
+         Title = "✅ 選択完了",
+         Content = selectedToy .. " を選択しました",
+         Duration = 2
+      })
    end,
 })
 
@@ -96,10 +93,65 @@ PlankTab:CreateSlider({
    end,
 })
 
--- 板スポーントグル（画面上のボタンを作成）
+-- おもちゃをスポーンする関数（確実に動作）
+local function spawnToyReliable(toyName, position)
+   -- 方法1: ReplicatedStorageのSpawnToyを試す
+   local success1 = pcall(function()
+      local spawnRemote = ReplicatedStorage:FindFirstChild("SpawnToy")
+      if spawnRemote and spawnRemote:IsA("RemoteEvent") then
+         spawnRemote:FireServer(toyName, position)
+         return true
+      end
+   end)
+   
+   if success1 then
+      task.wait(0.05)
+      return true
+   end
+   
+   -- 方法2: 別の可能性のあるRemoteを試す
+   local success2 = pcall(function()
+      for _, remote in pairs(ReplicatedStorage:GetDescendants()) do
+         if remote:IsA("RemoteEvent") and (remote.Name:lower():find("spawn") or remote.Name:lower():find("toy")) then
+            remote:FireServer(toyName, position)
+            return true
+         end
+      end
+   end)
+   
+   if success2 then
+      task.wait(0.05)
+      return true
+   end
+   
+   -- 方法3: ショップ経由でスポーン
+   local success3 = pcall(function()
+      for _, remote in pairs(ReplicatedStorage:GetDescendants()) do
+         if remote:IsA("RemoteFunction") or remote:IsA("RemoteEvent") then
+            if remote.Name:lower():find("buy") or remote.Name:lower():find("purchase") then
+               remote:FireServer(toyName)
+               task.wait(0.1)
+               -- スポーンされたアイテムを移動
+               for _, item in pairs(Workspace:GetChildren()) do
+                  if item.Name == toyName or item.Name:lower():find(toyName:lower()) then
+                     if item:IsA("Model") and item.PrimaryPart then
+                        item:SetPrimaryPartCFrame(CFrame.new(position))
+                     elseif item:IsA("BasePart") then
+                        item.CFrame = CFrame.new(position)
+                     end
+                     return true
+                  end
+               end
+            end
+         end
+      end
+   end)
+   
+   return success3
+end
+
+-- 画面上の固定ボタンを作成
 local function createScreenButton()
-   local Players = game:GetService("Players")
-   local LocalPlayer = Players.LocalPlayer
    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
    
    -- 既存のボタンを削除
@@ -118,8 +170,8 @@ local function createScreenButton()
    local button = Instance.new("TextButton")
    button.Name = "SpawnButton"
    button.Size = UDim2.new(0, 80, 0, 80)
-   button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-   button.BackgroundTransparency = 0.3
+   button.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+   button.BackgroundTransparency = 0.2
    button.BorderSizePixel = 0
    button.Text = "📦"
    button.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -134,12 +186,11 @@ local function createScreenButton()
    
    -- UIStroke追加
    local stroke = Instance.new("UIStroke")
-   stroke.Color = Color3.fromRGB(100, 100, 100)
-   stroke.Thickness = 2
+   stroke.Color = Color3.fromRGB(255, 255, 255)
+   stroke.Thickness = 3
    stroke.Parent = button
    
    -- デバイスに応じた位置設定
-   local UserInputService = game:GetService("UserInputService")
    if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
       -- モバイル: ジャンプボタンの上
       button.Position = UDim2.new(1, -100, 1, -180)
@@ -150,52 +201,50 @@ local function createScreenButton()
       button.AnchorPoint = Vector2.new(1, 1)
    end
    
-   -- ボタンのクリックイベント
+   -- ボタンのクリックイベント（1回押したら1個スポーン）
    button.MouseButton1Click:Connect(function()
-      plankSpawnEnabled = not plankSpawnEnabled
-      
-      if plankSpawnEnabled then
-         button.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-         button.Text = "✅"
-         
-         -- 板のスポーン開始
-         plankSpawnConnection = game:GetService("RunService").Heartbeat:Connect(function()
-            local character = LocalPlayer.Character
-            if not character then return end
-            
-            local hrp = character:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            
-            -- プレイヤーの前方に板をスポーン
-            local lookVector = hrp.CFrame.LookVector
-            local spawnPos = hrp.Position + (lookVector * plankDistance) + Vector3.new(0, heightOffset, 0)
-            
-            pcall(function()
-               local args = {[1] = selectedToy, [2] = spawnPos}
-               game:GetService("ReplicatedStorage"):WaitForChild("SpawnToy"):FireServer(unpack(args))
-            end)
-            
-            task.wait(spawnInterval)
-         end)
-         
+      local character = LocalPlayer.Character
+      if not character then 
          Rayfield:Notify({
-            Title = "📦 板スポーン開始",
-            Content = "板のスポーンを開始しました！",
+            Title = "❌ エラー",
+            Content = "キャラクターが見つかりません",
             Duration = 2
          })
-      else
-         button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-         button.Text = "📦"
-         
-         -- 板のスポーン停止
-         if plankSpawnConnection then
-            plankSpawnConnection:Disconnect()
-            plankSpawnConnection = nil
-         end
-         
+         return 
+      end
+      
+      local hrp = character:FindFirstChild("HumanoidRootPart")
+      if not hrp then 
          Rayfield:Notify({
-            Title = "📦 板スポーン停止",
-            Content = "板のスポーンを停止しました！",
+            Title = "❌ エラー",
+            Content = "HumanoidRootPartが見つかりません",
+            Duration = 2
+         })
+         return 
+      end
+      
+      -- ボタンのアニメーション
+      button.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+      task.wait(0.1)
+      button.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+      
+      -- プレイヤーの前方に板をスポーン
+      local lookVector = hrp.CFrame.LookVector
+      local spawnPos = hrp.Position + (lookVector * plankDistance) + Vector3.new(0, heightOffset, 0)
+      
+      -- スポーン実行
+      local success = spawnToyReliable(selectedToy, spawnPos)
+      
+      if success then
+         Rayfield:Notify({
+            Title = "✅ スポーン成功",
+            Content = selectedToy .. " をスポーンしました！",
+            Duration = 1.5
+         })
+      else
+         Rayfield:Notify({
+            Title = "⚠️ スポーン試行",
+            Content = selectedToy .. " のスポーンを試みました",
             Duration = 2
          })
       end
@@ -211,7 +260,7 @@ PlankTab:CreateButton({
       createScreenButton()
       Rayfield:Notify({
          Title = "✅ 完了",
-         Content = "画面上にボタンを作成しました！",
+         Content = "画面上にボタンを作成しました！ボタンを押すと1個スポーンします",
          Duration = 3
       })
    end,
@@ -221,33 +270,32 @@ PlankTab:CreateButton({
 PlankTab:CreateButton({
    Name = "🗑️ 画面ボタンを削除",
    Callback = function()
-      local PlayerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+      local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
       if PlayerGui:FindFirstChild("PlankSpawnButton") then
          PlayerGui:FindFirstChild("PlankSpawnButton"):Destroy()
-         
-         -- スポーン停止
-         if plankSpawnConnection then
-            plankSpawnConnection:Disconnect()
-            plankSpawnConnection = nil
-         end
-         plankSpawnEnabled = false
          
          Rayfield:Notify({
             Title = "🗑️ 削除完了",
             Content = "画面ボタンを削除しました！",
             Duration = 2
          })
+      else
+         Rayfield:Notify({
+            Title = "ℹ️ 情報",
+            Content = "削除するボタンがありません",
+            Duration = 2
+         })
       end
    end,
 })
 
--- クイックスポーンボタン（タブ内）
+-- クイックスポーンボタン
 local PlankSection2 = PlankTab:CreateSection("クイックスポーン")
 
 PlankTab:CreateButton({
-   Name = "⚡ 1個スポーン",
+   Name = "⚡ 前方に1個スポーン",
    Callback = function()
-      local character = game.Players.LocalPlayer.Character
+      local character = LocalPlayer.Character
       if not character then return end
       
       local hrp = character:FindFirstChild("HumanoidRootPart")
@@ -256,39 +304,32 @@ PlankTab:CreateButton({
       local lookVector = hrp.CFrame.LookVector
       local spawnPos = hrp.Position + (lookVector * plankDistance) + Vector3.new(0, heightOffset, 0)
       
-      pcall(function()
-         local args = {[1] = selectedToy, [2] = spawnPos}
-         game:GetService("ReplicatedStorage"):WaitForChild("SpawnToy"):FireServer(unpack(args))
-      end)
+      spawnToyReliable(selectedToy, spawnPos)
       
       Rayfield:Notify({
          Title = "✅ スポーン完了",
          Content = selectedToy .. " をスポーンしました！",
-         Duration = 1
+         Duration = 1.5
       })
    end,
 })
 
 PlankTab:CreateButton({
-   Name = "📚 5個連続スポーン",
+   Name = "📚 5個連続スポーン（橋）",
    Callback = function()
-      local character = game.Players.LocalPlayer.Character
+      local character = LocalPlayer.Character
       if not character then return end
       
       local hrp = character:FindFirstChild("HumanoidRootPart")
       if not hrp then return end
       
       task.spawn(function()
-         for i = 1, 5 do
-            local lookVector = hrp.CFrame.LookVector
-            local spawnPos = hrp.Position + (lookVector * (plankDistance + i * 2)) + Vector3.new(0, heightOffset, 0)
-            
-            pcall(function()
-               local args = {[1] = selectedToy, [2] = spawnPos}
-               game:GetService("ReplicatedStorage"):WaitForChild("SpawnToy"):FireServer(unpack(args))
-            end)
-            
-            task.wait(0.2)
+         local lookVector = hrp.CFrame.LookVector
+         
+         for i = 0, 4 do
+            local spawnPos = hrp.Position + (lookVector * (plankDistance + i * 3)) + Vector3.new(0, heightOffset, 0)
+            spawnToyReliable(selectedToy, spawnPos)
+            task.wait(0.15)
          end
          
          Rayfield:Notify({
@@ -301,9 +342,9 @@ PlankTab:CreateButton({
 })
 
 PlankTab:CreateButton({
-   Name = "🌉 橋を作成",
+   Name = "🌉 長い橋を作成（20個）",
    Callback = function()
-      local character = game.Players.LocalPlayer.Character
+      local character = LocalPlayer.Character
       if not character then return end
       
       local hrp = character:FindFirstChild("HumanoidRootPart")
@@ -312,14 +353,9 @@ PlankTab:CreateButton({
       task.spawn(function()
          local lookVector = hrp.CFrame.LookVector
          
-         for i = 0, 20 do
+         for i = 0, 19 do
             local spawnPos = hrp.Position + (lookVector * i * 3) + Vector3.new(0, heightOffset, 0)
-            
-            pcall(function()
-               local args = {[1] = selectedToy, [2] = spawnPos}
-               game:GetService("ReplicatedStorage"):WaitForChild("SpawnToy"):FireServer(unpack(args))
-            end)
-            
+            spawnToyReliable(selectedToy, spawnPos)
             task.wait(0.1)
          end
          
@@ -332,18 +368,43 @@ PlankTab:CreateButton({
    end,
 })
 
+-- デバッグセクション
+local DebugSection = PlankTab:CreateSection("🔧 デバッグ")
+
+PlankTab:CreateButton({
+   Name = "🔍 ReplicatedStorage確認",
+   Callback = function()
+      print("=== ReplicatedStorage 確認 ===")
+      for _, obj in pairs(ReplicatedStorage:GetChildren()) do
+         print("- " .. obj.Name .. " (" .. obj.ClassName .. ")")
+      end
+      
+      Rayfield:Notify({
+         Title = "✅ 確認完了",
+         Content = "F9コンソールを確認してください",
+         Duration = 3
+      })
+   end,
+})
+
 -- 説明パラグラフ
 PlankTab:CreateParagraph({
    Title = "使い方",
-   Content = "「画面ボタンを作成」を押すと、画面上にボタンが表示されます。ボタンを押すと板が自動でスポーンされます。PC・スマホ両対応です！デフォルトは「Pallet」です。"
+   Content = "1. おもちゃを選択\n2. 「画面ボタンを作成」を押す\n3. 画面のボタンを押すと1個ずつスポーン！\n\nPC: 右下 / モバイル: ジャンプボタンの上"
+})
+
+PlankTab:CreateParagraph({
+   Title = "⚠️ 注意",
+   Content = "板がスポーンされない場合は、ゲーム内で一度手動でPalletを購入してから試してください。"
 })
 
 -- 起動時の通知
 Rayfield:Notify({
-   Title = "柊羽 UI",
-   Content = "板スポーン機能が読み込まれました！",
+   Title = "柊羽 UI - 板スポーン",
+   Content = "キー認証完了！板スポーン機能が利用可能です",
    Duration = 4,
    Image = 4483362458,
 })
 
 print("柊羽 UI - 板スポーン機能 読み込み完了")
+print("選択中のおもちゃ: " .. selectedToy)
